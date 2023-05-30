@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"github.com/go-playground/validator/v10"
 	"net/http"
 
 	"github.com/zeromicro/go-zero/rest/httpx"
@@ -16,7 +17,12 @@ func ConvertHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 			httpx.ErrorCtx(r.Context(), w, err)
 			return
 		}
-
+		// 参数规则校验
+		if err := validator.New().StructCtx(r.Context(), &req); err != nil {
+			httpx.ErrorCtx(r.Context(), w, err)
+			return
+		}
+		// 执行业务逻辑
 		l := logic.NewConvertLogic(r.Context(), svcCtx)
 		resp, err := l.Convert(&req)
 		if err != nil {

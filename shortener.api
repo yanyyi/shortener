@@ -1,6 +1,6 @@
 /* 短链接项目*/
 type ConvertRequest {
-	LongUrl string `json:"longUrl"`
+	LongUrl string `json:"longUrl" validate:"required"`
 }
 
 type ConvertResponse {
@@ -8,7 +8,7 @@ type ConvertResponse {
 }
 
 type ShowRequest {
-	ShortUrl string `json:"shortUrl"`
+	ShortUrl string `json:"shortUrl" validate:"required"`
 }
 
 type ShowResponse {
