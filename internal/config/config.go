@@ -10,6 +10,7 @@ type Config struct {
 	}
 
 	Sequence struct {
-		DSN string
+		DSN       string
+		RedisAddr string
 	}
 }
