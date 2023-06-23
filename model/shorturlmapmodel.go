@@ -1,6 +1,9 @@
 package model
 
-import "github.com/zeromicro/go-zero/core/stores/sqlx"
+import (
+	"github.com/zeromicro/go-zero/core/stores/cache"
+	"github.com/zeromicro/go-zero/core/stores/sqlx"
+)
 
 var _ ShortUrlMapModel = (*customShortUrlMapModel)(nil)
 
@@ -17,8 +20,8 @@ type (
 )
 
 // NewShortUrlMapModel returns a model for the database table.
-func NewShortUrlMapModel(conn sqlx.SqlConn) ShortUrlMapModel {
+func NewShortUrlMapModel(conn sqlx.SqlConn, c cache.CacheConf, opts ...cache.Option) ShortUrlMapModel {
 	return &customShortUrlMapModel{
-		defaultShortUrlMapModel: newShortUrlMapModel(conn),
+		defaultShortUrlMapModel: newShortUrlMapModel(conn, c, opts...),
 	}
 }

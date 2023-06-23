@@ -22,7 +22,7 @@ func ShowHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {
-			httpx.OkJsonCtx(r.Context(), w, resp)
+			http.Redirect(w, r, resp.LongUrl, http.StatusFound)
 		}
 	}
 }

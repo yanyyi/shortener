@@ -8,7 +8,7 @@ type ConvertResponse {
 }
 
 type ShowRequest {
-	ShortUrl string `json:"shortUrl" validate:"required"`
+	ShortUrl string `path:"shortUrl" validate:"required"`
 }
 
 type ShowResponse {

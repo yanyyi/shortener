@@ -9,3 +9,12 @@ ShortUrlDB:
 Sequence:
   DSN: root:123456@tcp(127.0.0.1:3306)/shortener?charset=utf8mb4&parseTime=true&loc=Asia%2FShanghai
   RedisAddr: 127.0.0.1:6379
+
+BaseString: 0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
+
+ShortUrlBlackList:  ["version","fuck","stupid","convert","health","api","css","js"]
+
+ShortDomain: kiki.cn
+
+CacheRedis:
+  - Host: 127.0.0.1:6379

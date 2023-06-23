@@ -8,6 +8,8 @@ import (
 	"github.com/zeromicro/go-zero/core/stores/sqlx"
 	"shortener/internal/svc"
 	"shortener/internal/types"
+	"shortener/model"
+	"shortener/pkg/base62"
 	"shortener/pkg/connect"
 	"shortener/pkg/md5"
 	"shortener/pkg/urltool"
@@ -35,7 +37,7 @@ func (l *ConvertLogic) Convert(req *types.ConvertRequest) (resp *types.ConvertRe
 	// 1.1 数据不为空
 	// 1.2 输入的长链接必须是一个能请求通的网址 ==> ping以下，看返回状态码是否为200即可
 	if ok := connect.Get(req.LongUrl); !ok {
-		return nil, errors.New("无效连接")
+		return nil, errors.New("无效链接")
 	}
 	// 1.3 判断之前是否已经转链过(数据库中是否已存在该长链接)
 	// 1.3.1 给长链接生成md5
@@ -43,7 +45,7 @@ func (l *ConvertLogic) Convert(req *types.ConvertRequest) (resp *types.ConvertRe
 	// 1.3.2 拿md5去数据库中查是否存在
 	u, err := l.svcCtx.ShortUrlModel.FindOneByMd5(l.ctx, sql.NullString{String: md5Value, Valid: true})
 	if err != sqlx.ErrNotFound {
-		if err != nil {
+		if err == nil {
 			return nil, fmt.Errorf("该链接已被转为%s", u.Surl.String)
 		}
 		logx.Errorw("ShortUrlModel.FindOneByMd5 failed", logx.LogField{Key: "err", Value: err.Error()})
@@ -65,15 +67,39 @@ func (l *ConvertLogic) Convert(req *types.ConvertRequest) (resp *types.ConvertRe
 	}
 	// 2.取号 基于MySQL实现的发号器
 	// 每来一个转链请求,我们就使用 REPLACE INTO语句往 sequence 表插入一条数据,并且取出主键id作为号码
-	seq, err := l.svcCtx.Sequence.Next()
-	if err != nil {
-		logx.Errorw("l.svcCtx.Sequence.Next() failed", logx.LogField{Key: "err", Value: err.Error()})
+	var short string
+	for {
+		seq, err := l.svcCtx.Sequence.Next()
+		if err != nil {
+			logx.Errorw("l.svcCtx.Sequence.Next() failed", logx.LogField{Key: "err", Value: err.Error()})
+			return nil, err
+		}
+		// 3.号码转短链
+		// 3.1 安全性 1En - 6347
+		short = base62.Int2String(seq)
+		// 3.2 短域名黑名单避免某些特殊的词,比如 api health fuck
+		if _, ok := l.svcCtx.ShortUrlBlackList[short]; !ok {
+			break //generate the short url which is not on the blacklist
+		}
+	}
+	// 4.存储长链接短链接映射关系
+	if _, err = l.svcCtx.ShortUrlModel.Insert(
+		l.ctx,
+		&model.ShortUrlMap{
+			Lurl: sql.NullString{String: req.LongUrl, Valid: true},
+			Md5:  sql.NullString{String: md5Value, Valid: true},
+			Surl: sql.NullString{String: short, Valid: true},
+		},
+	); err != nil {
+		logx.Errorw("ShortUrlModel.Insert() failed", logx.LogField{Key: "err", Value: err.Error()})
 		return nil, err
 	}
-	// 3.号码转短链
-	fmt.Println(seq)
-	// 4.存储长链接短链接映射关系
-
-	// 5.返回响应
-	return
+	// 将生成的短链接加到布隆过滤器中
+	if err = l.svcCtx.Filter.Add([]byte(short)); err != nil {
+		logx.Errorw("BloomFilter.Add() failed", logx.LogField{Key: "err", Value: err.Error()})
+	}
+	// 5.return response
+	// 5.1 return: short domain + short url kiki.cn/1En
+	shortUrl := l.svcCtx.Config.ShortDomain + "/" + short
+	return &types.ConvertResponse{ShortUrl: shortUrl}, nil
 }

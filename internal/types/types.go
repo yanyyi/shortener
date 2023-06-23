@@ -10,7 +10,7 @@ type ConvertResponse struct {
 }
 
 type ShowRequest struct {
-	ShortUrl string `json:"shortUrl" validate:"required"`
+	ShortUrl string `path:"shortUrl" validate:"required"`
 }
 
 type ShowResponse struct {

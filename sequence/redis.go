@@ -2,7 +2,7 @@ package sequence
 
 import (
 	"context"
-	"fmt"
+	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/stores/redis"
 	"strconv"
 	"time"
@@ -35,12 +35,12 @@ func (r *Redis) Next() (seq uint64, err error) {
 	ctx := context.Background()
 	_, err = rds.IncrCtx(ctx, AutoIncrId)
 	if err != nil {
-		fmt.Printf("rds.IncrCtx() failed,  error:%v\n", err)
+		logx.Errorw("rds.IncrCtx() failed", logx.LogField{Key: "err", Value: err.Error()})
 		return
 	}
 	id, err := rds.Get(AutoIncrId)
 	if err != nil {
-		fmt.Printf("rds.Get() failed,  error:%v\n", err)
+		logx.Errorw("rds.Get() failed", logx.LogField{Key: "err", Value: err.Error()})
 		return
 	}
 	idInt, _ := strconv.Atoi(id)
